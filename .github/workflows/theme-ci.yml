@@ -1,12 +1,17 @@
 name: Theme Build
 
 on:
-  push: {}
-  pull_request: {}
+  push:
+    branches:
+      - '**'           # Run on any branch
+    tags:
+      - 'theme-*-v*'   # Also run on theme tags
+  pull_request: {}      # Still runs on PRs
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v5
 
