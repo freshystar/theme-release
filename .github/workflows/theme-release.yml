@@ -81,7 +81,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
-          name: "${{ steps.parse.outputs.theme_name }} v${{ steps.parse.outputs.version }}"
+          name: "${{ steps.parse.outputs.theme_name }}"
           files: ${{ steps.zip.outputs.zip_path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
