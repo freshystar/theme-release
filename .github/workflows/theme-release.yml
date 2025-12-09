@@ -1,41 +1,27 @@
 name: Theme Release
 
+# Trigger directly on tag pushes matching the theme pattern
 on:
-  workflow_run:
-    workflows: ["Theme Build"] # Run only after CI finishes
-    types: [completed]
+  push:
+    tags:
+      - 'theme-*-v*'  # Matches tags like theme-adorsys_theme_v1-v1.2.3
 
 jobs:
   build-and-release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write  # Needed for creating releases
 
     steps:
+      # Step 1: Checkout code
       - uses: actions/checkout@v5
 
-      #---
-      # Parse tag
+      # Step 2: Parse tag for theme name & version
       - name: Parse theme name & version
         id: parse
         shell: bash
         run: |
-          TAG=""
-          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
-            # When triggered by workflow_run, try to get the ref from the original workflow that completed
-            # If the original event was a tag push, the ref will be 'refs/tags/TAG_NAME'
-            if [[ "${{ github.event.workflow_run.ref }}" =~ ^refs/tags/ ]]; then
-              TAG="${{ github.event.workflow_run.ref }}"
-              TAG="${TAG#refs/tags/}" # Remove 'refs/tags/' prefix
-            else
-              # Fallback for other workflow_run scenarios (e.g., original workflow was on a branch)
-              TAG="${{ github.event.workflow_run.head_ref }}"
-            fi
-          else
-            # For direct push events (e.g., tag push directly to this workflow), GITHUB_REF_NAME is correct
-            TAG="${GITHUB_REF_NAME}"
-          fi
+          TAG="${GITHUB_REF_NAME}"
           if [[ "$TAG" =~ ^theme-([a-zA-Z0-9_]+_v[0-9]+)-v([0-9]+\.[0-9]+\.[0-9]+.*)$ ]]; then
             echo "theme_name=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
             echo "version=${BASH_REMATCH[2]}" >> $GITHUB_OUTPUT
@@ -45,30 +31,32 @@ jobs:
             exit 1
           fi
 
-      # Verify presence
+      # Step 3: Validate theme directory exists
       - name: Validate theme directory
         run: |
           test -d "${{ steps.parse.outputs.theme_path }}" || {
-            echo "Theme not found"
+            echo "Theme not found at ${{ steps.parse.outputs.theme_path }}"
             exit 1
           }
 
-      # Build
+      # Step 4: Setup Node.js
       - uses: actions/setup-node@v5
         with:
           node-version: "18"
 
+      # Step 5: Install dependencies
       - name: Install dependencies
         working-directory: ${{ steps.parse.outputs.theme_path }}
         run: yarn install --frozen-lockfile
 
+      # Step 6: Build theme
       - name: Build theme
         working-directory: ${{ steps.parse.outputs.theme_path }}
         env:
           NODE_OPTIONS: "--loader ts-node/esm"
         run: yarn build
 
-      # ZIP (correct structure)
+      # Step 7: Package theme as ZIP (with correct folder structure)
       - name: Package theme
         id: zip
         shell: bash
@@ -76,7 +64,7 @@ jobs:
           THEME="${{ steps.parse.outputs.theme_name }}"
           VERSION="${{ steps.parse.outputs.version }}"
           ZIP_PATH="${GITHUB_WORKSPACE}/${THEME}-${VERSION}.zip"
-
+          
           cd plugins/gis-theme
           zip -r "$ZIP_PATH" "$THEME" \
             -x "$THEME/node_modules/*" \
@@ -88,7 +76,7 @@ jobs:
 
           echo "zip_path=$ZIP_PATH" >> $GITHUB_OUTPUT
 
-      # Release
+      # Step 8: Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
