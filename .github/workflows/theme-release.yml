@@ -4,19 +4,19 @@ name: Theme Release
 on:
   push:
     tags:
-      - 'theme-*-v*'  # Matches tags like theme-adorsys_theme_v1-v1.2.3
+      - 'theme-*-v*'  
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Needed for creating releases
+      contents: write  
 
     steps:
-      # Step 1: Checkout code
+      # Checkout code
       - uses: actions/checkout@v5
 
-      # Step 2: Parse tag for theme name & version
+      # Parse tag for theme name & version
       - name: Parse theme name & version
         id: parse
         shell: bash
@@ -31,7 +31,7 @@ jobs:
             exit 1
           fi
 
-      # Step 3: Validate theme directory exists
+      # Validate theme directory exists
       - name: Validate theme directory
         run: |
           test -d "${{ steps.parse.outputs.theme_path }}" || {
@@ -39,24 +39,24 @@ jobs:
             exit 1
           }
 
-      # Step 4: Setup Node.js
+      # Setup Node.js
       - uses: actions/setup-node@v5
         with:
           node-version: "18"
 
-      # Step 5: Install dependencies
+      # Install dependencies
       - name: Install dependencies
         working-directory: ${{ steps.parse.outputs.theme_path }}
         run: yarn install --frozen-lockfile
 
-      # Step 6: Build theme
+      # Build theme
       - name: Build theme
         working-directory: ${{ steps.parse.outputs.theme_path }}
         env:
           NODE_OPTIONS: "--loader ts-node/esm"
         run: yarn build
 
-      # Step 7: Package theme as ZIP (with correct folder structure)
+      # Package theme as ZIP (with correct folder structure)
       - name: Package theme
         id: zip
         shell: bash
@@ -76,7 +76,7 @@ jobs:
 
           echo "zip_path=$ZIP_PATH" >> $GITHUB_OUTPUT
 
-      # Step 8: Create GitHub Release
+      # Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
