@@ -51,7 +51,7 @@ jobs:
           VERSION="${{ steps.parse.outputs.version }}"
           ZIP_PATH="${GITHUB_WORKSPACE}/${PLUGIN}-${VERSION}.zip"
 
-          cd plugins/ai-providers
+          cd plugins
 
           zip -r "$ZIP_PATH" "$PLUGIN" \
             -x "$PLUGIN/node_modules/*" \
