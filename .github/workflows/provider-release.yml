@@ -27,7 +27,7 @@ jobs:
             VERSION="${BASH_REMATCH[2]}"
             echo "plugin_name=$PLUGIN" >> $GITHUB_OUTPUT
             echo "version=$VERSION" >> $GITHUB_OUTPUT
-            echo "plugin_path=plugins/ai-providers/$PLUGIN" >> $GITHUB_OUTPUT
+            echo "plugin_path=plugins/$PLUGIN" >> $GITHUB_OUTPUT
           else
             echo "❌ Invalid tag format: $TAG"
             exit 1
